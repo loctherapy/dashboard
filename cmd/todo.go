@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/loctherapy/dashboard/internal/todo"
 	"github.com/spf13/cobra"
@@ -30,11 +31,26 @@ var todoCmd = &cobra.Command{
             return
         }
 
-        // Print results
+        // Group by context
+        contextMap := make(map[string][]todo.FileToDos)
         for _, fileToDos := range todos {
-            fmt.Printf("File: %s\n", fileToDos.FilePath)
-            for _, todo := range fileToDos.ToDos {
-                fmt.Println(todo.Line)
+            contextMap[fileToDos.Context] = append(contextMap[fileToDos.Context], fileToDos)
+        }
+
+        // Print results
+        for context, files := range contextMap {
+            fmt.Printf("Context: %s\n", context)
+
+            // Sort files by gravity
+            sort.Slice(files, func(i, j int) bool {
+                return files[i].Gravity > files[j].Gravity
+            })
+
+            for _, fileToDos := range files {
+                fmt.Printf("  File: %s (Gravity: %d)\n", fileToDos.FilePath, fileToDos.Gravity)
+                for _, todo := range fileToDos.ToDos {
+                    fmt.Printf("    %s\n", todo.Line)
+                }
             }
             fmt.Println()
         }
