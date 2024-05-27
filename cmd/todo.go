@@ -11,20 +11,36 @@ var pattern string
 
 var todoCmd = &cobra.Command{
     Use:   "todo",
-    Short: "List all the undone todos",
-    Long:  `List all the undone todos in the current directory and nested directories`,
+    Short: "List all unchecked todos in markdown files",
+    Long:  `Fetch all markdown files and list all unchecked todos within them.`,
     Run: func(cmd *cobra.Command, args []string) {
-        f := todo.NewFileFetcher(pattern)
+        // Fetch .md files
+        f := todo.NewFileFetcher(`.*\.md$`)
         files, err := f.Fetch()
         if err != nil {
-            fmt.Println("Error:", err)
+            fmt.Println("Error fetching files:", err)
             return
         }
-        for _, file := range files {
-            fmt.Println(file)
+
+        // Build todos
+        builder := todo.NewToDoBuilder()
+        todos, err := builder.Build(files)
+        if err != nil {
+            fmt.Println("Error building todos:", err)
+            return
+        }
+
+        // Print results
+        for _, fileToDos := range todos {
+            fmt.Printf("File: %s\n", fileToDos.FilePath)
+            for _, todo := range fileToDos.ToDos {
+                fmt.Println(todo.Line)
+            }
+            fmt.Println()
         }
     },
 }
+
 
 func init() {
     rootCmd.AddCommand(todoCmd)
