@@ -39,12 +39,12 @@ func NewToDoPrinter() (*ToDoPrinter, error) {
 
 func printContext(context string) string {
     contextColor := color.New(color.FgHiYellow, color.Bold).SprintFunc()
-    return contextColor(fmt.Sprintf("%s\n", strings.ToUpper(context)))
+    return contextColor(fmt.Sprintf("🌳 %s\n", strings.ToUpper(context)))
 }
 
 func printFile(filePath string, gravity int) string {
     fileColor := color.New(color.FgHiCyan).SprintFunc()
-    return fileColor(fmt.Sprintf("  %s (Gravity: %d)", filePath, gravity))
+    return fileColor(fmt.Sprintf("  💎 %s (Gravity: %d)", filePath, gravity))
 }
 
 func printToDo(todo string) string {
