@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"sort"
 
 	"github.com/loctherapy/dashboard/internal/todo"
 	"github.com/spf13/cobra"
@@ -31,28 +30,15 @@ var todoCmd = &cobra.Command{
             return
         }
 
-        // Group by context
-        contextMap := make(map[string][]todo.FileToDos)
-        for _, fileToDos := range todos {
-            contextMap[fileToDos.Context] = append(contextMap[fileToDos.Context], fileToDos)
+        // Print results using ToDoPrinter
+        printer, err := todo.NewToDoPrinter()
+        if err != nil {
+            fmt.Println("Error creating printer:", err)
+            return
         }
 
-        // Print results
-        for context, files := range contextMap {
-            fmt.Printf("Context: %s\n", context)
-
-            // Sort files by gravity
-            sort.Slice(files, func(i, j int) bool {
-                return files[i].Gravity > files[j].Gravity
-            })
-
-            for _, fileToDos := range files {
-                fmt.Printf("  File: %s (Gravity: %d)\n", fileToDos.FilePath, fileToDos.Gravity)
-                for _, todo := range fileToDos.ToDos {
-                    fmt.Printf("    %s\n", todo.Line)
-                }
-            }
-            fmt.Println()
+        if err := printer.Print(todos); err != nil {
+            fmt.Println("Error printing todos:", err)
         }
     },
 }
