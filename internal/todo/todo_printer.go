@@ -19,8 +19,9 @@ Context: {{ $context }}
   {{- range .ToDos }}
     {{ .Line }}
   {{- end }}
-{{- end }}
+{{ end }}
 {{ end }}`
+
     t, err := template.New("todo").Parse(tmpl)
     if err != nil {
         return nil, err
