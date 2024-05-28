@@ -5,10 +5,9 @@ import (
 	"os"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/loctherapy/dashboard/internal/todo"
 	"github.com/rivo/tview"
 	"github.com/spf13/cobra"
-
-	"github.com/loctherapy/dashboard/internal/todo"
 )
 
 var rootCmd = &cobra.Command{
@@ -17,12 +16,34 @@ var rootCmd = &cobra.Command{
     Long:  `A longer description of Dashboard with usage examples and details.`,
     Run: func(cmd *cobra.Command, args []string) {
         // Root command logic
-        fmt.Println("Welcome to the Dashboard CLI!")
-        mainUI()
+        todosString, err := getToDoString()
+
+        if err != nil {
+            fmt.Println("Error getting todos:", err)
+            panic(err)
+        }
+
+        mainUI(todosString)
     },
 }
 
-func mainUI() {
+func getToDoString() (string, error) {
+    facade, err := todo.NewToDoFacade(`.*\.md$`, todo.TView)
+
+    if err != nil {
+        return "", err
+    }
+
+    todosString, err := facade.Print()
+
+    if err != nil {
+        return "", err
+    }
+
+    return todosString, nil
+}
+
+func mainUI(todosString string) {
     app := tview.NewApplication()
 
     // Create header
@@ -41,18 +62,6 @@ func mainUI() {
         SetChangedFunc(func() {
             app.Draw()
         })
-
-    facade, err := todo.NewToDoFacade(`.*\.md$`, todo.TView)
-
-    if err != nil {
-        fmt.Println("Error printing todos:", err)
-    }
-
-    todosString, err := facade.Print()
-
-    if err != nil {
-        fmt.Println("Error printing todos:", err)
-    }
 
     todoTextView.SetText(todosString)
 
