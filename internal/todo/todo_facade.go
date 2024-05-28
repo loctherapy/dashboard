@@ -27,16 +27,29 @@ func NewToDoFacade(pattern string, printMode PrintMode) (*ToDoFacade, error) {
 	return &ToDoFacade{Pattern: pattern, fetcher: fetcher, builder: builder, printer: printer}, nil
 }
 
-func (f* ToDoFacade) Print() (string, error) {
+func (f* ToDoFacade) Build() ([]FileToDos, error) {
 	// Fetch .md files
 	files, err := f.fetcher.Fetch(f.Pattern)
 	if err != nil {
 		fmt.Println("Error fetching files:", err)
-		return "", err
+		return nil, err
 	}
 
 	// Build todos
 	todos, err := f.builder.Build(files)
+
+	if err != nil {
+		fmt.Println("Error building todos:", err)
+		return nil, err
+	}
+
+	return todos, nil
+}
+
+func (f* ToDoFacade) Print() (string, error) {
+	
+	todos, err := f.Build()
+
 	if err != nil {
 		fmt.Println("Error building todos:", err)
 		return "", err
