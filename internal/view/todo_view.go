@@ -1,16 +1,16 @@
-package ui
+package view
 
 import (
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/loctherapy/dashboard/internal/todo"
+	"github.com/loctherapy/dashboard/internal/model"
 	"github.com/rivo/tview"
 )
 
-type UIFactory struct {
+type View struct {
+	Printer       *ToDoPrinter
 	app           *tview.Application
 	header        *tview.TextView
 	buttonsFlex    *tview.Flex
@@ -18,7 +18,7 @@ type UIFactory struct {
 	mainContainer *tview.Flex
 }
 
-func NewUIFactory() *UIFactory {
+func NewView(printer *ToDoPrinter) *View {
 	app := tview.NewApplication()
 	header := createMainHeader()
 	buttonFlex := createButtons(app)
@@ -27,7 +27,7 @@ func NewUIFactory() *UIFactory {
 
 	setupKeybindings(app)
 
-	return &UIFactory{app, header, buttonFlex, todoTextView, mainContainer}
+	return &View{printer, app, header, buttonFlex, todoTextView, mainContainer}
 }
 
 func createMainHeader() *tview.TextView {
@@ -93,7 +93,8 @@ func setupKeybindings(app *tview.Application) {
 	})
 }
 
-func (f *UIFactory) startUpdatingTodos(app *tview.Application, todoTextView *tview.TextView) {
+/*
+func (f *View) startUpdatingTodos(app *tview.Application, todoTextView *tview.TextView) {
 	updateTodos := func() {
 		todosString, err := getToDoString()
 		if err != nil {
@@ -118,31 +119,28 @@ func (f *UIFactory) startUpdatingTodos(app *tview.Application, todoTextView *tvi
 			}
 		}
 	}()
-}
+}*/
 
-func getToDoString() (string, error) {
-	facade, err := todo.NewToDoFacade(`.*\.md$`, todo.TView)
-	if err != nil {
-		return "", err
-	}
 
-	todosString, err := facade.Print()
-	if err != nil {
-		return "", err
-	}
-
-	return todosString, nil
-}
-
-func runUI(app *tview.Application, flex *tview.Flex) {
+func (f *View) RunUI() {
 	// Start the application
-	if err := app.SetRoot(flex, true).Run(); err != nil {
+	if err := f.app.SetRoot(f.mainContainer, true).Run(); err != nil {
 		fmt.Println("Error:", err)
 		os.Exit(1)
 	}
 }
 
-func (f *UIFactory) Run() {
-	f.startUpdatingTodos(f.app, f.todoTextView)
-	runUI(f.app, f.mainContainer)
+
+func (f *View) DisplayToDos(todos []model.FileToDos) {
+	// Use the printer to convert the todos to a string
+	todosString, err := f.Printer.Print(todos)
+	if err != nil {
+		fmt.Println("Error printing todos:", err)
+		return
+	}
+
+	// Queue the update to the todoTextView
+	f.app.QueueUpdateDraw(func() {
+		f.todoTextView.SetText(todosString)
+	})
 }

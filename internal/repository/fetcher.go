@@ -1,4 +1,4 @@
-package todo
+package repository
 
 import (
 	"fmt"
@@ -8,29 +8,32 @@ import (
 )
 
 type FileFetcher struct {
-
+    FileRegex *regexp.Regexp
 }
 
-func NewFileFetcher() *FileFetcher {
-    return &FileFetcher{}
-}
-
-func (f *FileFetcher) Fetch(pattern string) ([]string, error) {
+func NewFileFetcher(pattern string) (*FileFetcher, error) {
     if pattern == "" {
         pattern = `.*\.md$`
     }
 
-    var files []string
     re, err := regexp.Compile(pattern)
+
     if err != nil {
         return nil, fmt.Errorf("invalid regex pattern: %v", err)
     }
 
-    err = filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
+    return &FileFetcher{FileRegex: re}, nil
+}
+
+func (f *FileFetcher) Fetch() ([]string, error) {
+
+    var files []string
+
+    err := filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
         if err != nil {
             return err
         }
-        if !info.IsDir() && re.MatchString(info.Name()) {
+        if !info.IsDir() && f.FileRegex.MatchString(info.Name()) {
             files = append(files, path)
         }
         return nil
