@@ -19,7 +19,7 @@ type UIFactory struct {
 
 func NewUIFactory() *UIFactory {
 	app := tview.NewApplication()
-	header := createHeader()
+	header := createMainHeader()
 	todoTextView := createTodoTextView(app)
 	flex := createLayout(header, todoTextView)
 
@@ -29,11 +29,15 @@ func NewUIFactory() *UIFactory {
 }
 
 
-func createHeader() *tview.TextView {
+func createMainHeader() *tview.TextView {
+	headerText := `
+🔋 LOCTHERAPY DASHBOARD 🔋
+────────────────────────────────────────`
+
 	return tview.NewTextView().
-		SetText("Dashboard").
+		SetText(headerText).
 		SetTextAlign(tview.AlignCenter).
-		SetTextColor(tview.Styles.PrimaryTextColor).
+		SetTextColor(tcell.ColorGreen).
 		SetDynamicColors(true).
 		SetRegions(true)
 }
@@ -52,7 +56,7 @@ func createTodoTextView(app *tview.Application) *tview.TextView {
 func createLayout(header, todoTextView *tview.TextView) *tview.Flex {
 	return tview.NewFlex().
 		SetDirection(tview.FlexRow).
-		AddItem(header, 3, 1, false).
+		AddItem(header, 4, 1, false).
 		AddItem(todoTextView, 0, 1, true)
 }
 
