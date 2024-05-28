@@ -8,19 +8,20 @@ import (
 )
 
 type FileFetcher struct {
-    Pattern string
+
 }
 
-func NewFileFetcher(pattern string) *FileFetcher {
+func NewFileFetcher() *FileFetcher {
+    return &FileFetcher{}
+}
+
+func (f *FileFetcher) Fetch(pattern string) ([]string, error) {
     if pattern == "" {
         pattern = `.*\.md$`
     }
-    return &FileFetcher{Pattern: pattern}
-}
 
-func (f *FileFetcher) Fetch() ([]string, error) {
     var files []string
-    re, err := regexp.Compile(f.Pattern)
+    re, err := regexp.Compile(pattern)
     if err != nil {
         return nil, fmt.Errorf("invalid regex pattern: %v", err)
     }

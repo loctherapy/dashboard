@@ -52,7 +52,7 @@ func printToDo(todo string) string {
     return todoColor(fmt.Sprintf("    %s", todo))
 }
 
-func (p *ToDoPrinter) Print(todos []FileToDos) error {
+func (p *ToDoPrinter) Print(todos []FileToDos) (string, error ) {
     // Group by context
     contextMap := make(map[string][]FileToDos)
     for _, fileToDos := range todos {
@@ -77,8 +77,7 @@ func (p *ToDoPrinter) Print(todos []FileToDos) error {
     // Render the template
     var sb strings.Builder
     if err := p.Template.Execute(&sb, data); err != nil {
-        return err
+        return "", err
     }
-    fmt.Print(sb.String())
-    return nil
+    return sb.String(), nil
 }
