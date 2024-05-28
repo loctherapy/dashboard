@@ -18,7 +18,6 @@ type UIFactory struct {
 	mainContainer *tview.Flex
 }
 
-
 func NewUIFactory() *UIFactory {
 	app := tview.NewApplication()
 	header := createMainHeader()
@@ -30,7 +29,6 @@ func NewUIFactory() *UIFactory {
 
 	return &UIFactory{app, header, buttons, todoTextView, mainContainer}
 }
-
 
 func createMainHeader() *tview.TextView {
 	headerText := `
@@ -46,22 +44,19 @@ func createMainHeader() *tview.TextView {
 }
 
 func createButtons(app *tview.Application) []*tview.Button {
-    button1 := tview.NewButton("1 - All").SetSelectedFunc(func() {
-        // TODO: Add logic to filter and display all todos
-    })
-    button2 := tview.NewButton("2 - CF").SetSelectedFunc(func() {
-        // TODO: Add logic to filter and display CF todos
-    })
-    button3 := tview.NewButton("3 - GP").SetSelectedFunc(func() {
-        // TODO: Add logic to filter and display GP todos
-    })
+	button1 := tview.NewButton("1 - All").SetSelectedFunc(func() {
+		// TODO: Add logic to filter and display all todos
+	})
+	button2 := tview.NewButton("2 - CF").SetSelectedFunc(func() {
+		// TODO: Add logic to filter and display CF todos
+	})
+	button3 := tview.NewButton("3 - GP").SetSelectedFunc(func() {
+		// TODO: Add logic to filter and display GP todos
+	})
 
-    buttons := make([]*tview.Button, 0)
-	buttons = append(buttons, button1, button2, button3)
-
-    return buttons
+	buttons := []*tview.Button{button1, button2, button3}
+	return buttons
 }
-
 
 func createTodoTextView(app *tview.Application) *tview.TextView {
 	todoTextView := tview.NewTextView().
@@ -81,11 +76,9 @@ func createLayout(header *tview.TextView, buttons []*tview.Button, todoTextView 
 
 	for _, button := range buttons {
 		flex.AddItem(button, 1, 1, false)
-	
 	}
-		
-	flex.AddItem(todoTextView, 0, 1, true)
 
+	flex.AddItem(todoTextView, 0, 1, true)
 	return flex
 }
 
@@ -109,7 +102,7 @@ func startUpdatingTodos(app *tview.Application, todoTextView *tview.TextView) {
 			todoTextView.SetText(todosString)
 		})
 	}
- 
+
 	// Initial fetch and update
 	go updateTodos()
 
@@ -149,6 +142,5 @@ func runUI(app *tview.Application, flex *tview.Flex) {
 
 func (f *UIFactory) Run() {
 	startUpdatingTodos(f.app, f.todoTextView)
-
 	runUI(f.app, f.mainContainer)
 }
