@@ -93,7 +93,7 @@ func setupKeybindings(app *tview.Application) {
 	})
 }
 
-func startUpdatingTodos(app *tview.Application, todoTextView *tview.TextView) {
+func (f *UIFactory) startUpdatingTodos(app *tview.Application, todoTextView *tview.TextView) {
 	updateTodos := func() {
 		todosString, err := getToDoString()
 		if err != nil {
@@ -143,6 +143,6 @@ func runUI(app *tview.Application, flex *tview.Flex) {
 }
 
 func (f *UIFactory) Run() {
-	startUpdatingTodos(f.app, f.todoTextView)
+	f.startUpdatingTodos(f.app, f.todoTextView)
 	runUI(f.app, f.mainContainer)
 }
