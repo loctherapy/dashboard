@@ -13,8 +13,7 @@ import (
 type UIFactory struct {
 	app           *tview.Application
 	header        *tview.TextView
-	buttons       []*tview.Button
-	buttonFlex    *tview.Flex
+	buttonsFlex    *tview.Flex
 	todoTextView  *tview.TextView
 	mainContainer *tview.Flex
 }
@@ -22,13 +21,13 @@ type UIFactory struct {
 func NewUIFactory() *UIFactory {
 	app := tview.NewApplication()
 	header := createMainHeader()
-	buttons, buttonFlex := createButtons(app)
+	buttonFlex := createButtons(app)
 	todoTextView := createTodoTextView(app)
 	mainContainer := createLayout(header, buttonFlex, todoTextView)
 
 	setupKeybindings(app)
 
-	return &UIFactory{app, header, buttons, buttonFlex, todoTextView, mainContainer}
+	return &UIFactory{app, header, buttonFlex, todoTextView, mainContainer}
 }
 
 func createMainHeader() *tview.TextView {
@@ -44,7 +43,7 @@ func createMainHeader() *tview.TextView {
 		SetRegions(true)
 }
 
-func createButtons(app *tview.Application) ([]*tview.Button, *tview.Flex) {
+func createButtons(app *tview.Application) *tview.Flex {
 	button1 := tview.NewButton("1 - All").SetSelectedFunc(func() {
 		// TODO: Add logic to filter and display all todos
 	})
@@ -55,15 +54,13 @@ func createButtons(app *tview.Application) ([]*tview.Button, *tview.Flex) {
 		// TODO: Add logic to filter and display GP todos
 	})
 
-	buttons := []*tview.Button{button1, button2, button3}
-
-	buttonFlex := tview.NewFlex().
+	buttonsFlex := tview.NewFlex().
 		SetDirection(tview.FlexColumn).
 		AddItem(button1, 0, 1, false).
 		AddItem(button2, 0, 1, false).
 		AddItem(button3, 0, 1, false)
 
-	return buttons, buttonFlex
+	return buttonsFlex
 }
 
 func createTodoTextView(app *tview.Application) *tview.TextView {
