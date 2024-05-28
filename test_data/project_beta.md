@@ -1,0 +1,9 @@
+---
+context: cp
+gravity: 9
+---
+
+# Project Alfa
+- [ ] Do X
+- [ ] Do Y
+- [ ] Do Z
