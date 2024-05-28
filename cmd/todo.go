@@ -14,7 +14,7 @@ var todoCmd = &cobra.Command{
     Short: "List all unchecked todos in markdown files",
     Long:  `Fetch all markdown files and list all unchecked todos within them.`,
     Run: func(cmd *cobra.Command, args []string) {
-        facade, err := todo.NewToDoFacade(`.*\.md$`)
+        facade, err := todo.NewToDoFacade(`.*\.md$`, todo.Console)
 
         if err != nil {
             fmt.Println("Error printing todos:", err)

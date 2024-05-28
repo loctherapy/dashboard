@@ -5,20 +5,22 @@ import (
 )
 
 type ToDoFacade struct {
+	PrintMode PrintMode
 	Pattern string
 	fetcher *FileFetcher
 	builder *ToDoBuilder
 	printer *ToDoPrinter
 }
 
-func NewToDoFacade(pattern string) (*ToDoFacade, error) {
+func NewToDoFacade(pattern string, printMode PrintMode) (*ToDoFacade, error) {
 	if pattern == "" {
 		pattern = `.*\.md$`
 	}
 
 	fetcher := NewFileFetcher()
 	builder := NewToDoBuilder()
-	printer, err := NewToDoPrinter()
+	factory := ToDoPrinterFactory{}
+	printer, err := factory.CreatePrinter(printMode)
 	if err != nil {
 		return nil, err
 	}
@@ -27,7 +29,6 @@ func NewToDoFacade(pattern string) (*ToDoFacade, error) {
 
 func (f* ToDoFacade) Print() (string, error) {
 	// Fetch .md files
-
 	files, err := f.fetcher.Fetch(f.Pattern)
 	if err != nil {
 		fmt.Println("Error fetching files:", err)

@@ -42,7 +42,7 @@ func mainUI() {
             app.Draw()
         })
 
-    facade, err := todo.NewToDoFacade(`.*\.md$`)
+    facade, err := todo.NewToDoFacade(`.*\.md$`, todo.TView)
 
     if err != nil {
         fmt.Println("Error printing todos:", err)
