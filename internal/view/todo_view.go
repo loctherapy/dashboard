@@ -93,35 +93,6 @@ func setupKeybindings(app *tview.Application) {
 	})
 }
 
-/*
-func (f *View) startUpdatingTodos(app *tview.Application, todoTextView *tview.TextView) {
-	updateTodos := func() {
-		todosString, err := getToDoString()
-		if err != nil {
-			fmt.Println("Error getting todos:", err)
-			return
-		}
-		app.QueueUpdateDraw(func() {
-			todoTextView.SetText(todosString)
-		})
-	}
-
-	// Initial fetch and update
-	go updateTodos()
-
-	// Create a ticker to update todos periodically
-	ticker := time.NewTicker(1 * time.Second) // Adjust the interval as needed
-	go func() {
-		for {
-			select {
-			case <-ticker.C:
-				updateTodos()
-			}
-		}
-	}()
-}*/
-
-
 func (f *View) RunUI() {
 	// Start the application
 	if err := f.app.SetRoot(f.mainContainer, true).Run(); err != nil {
@@ -129,7 +100,6 @@ func (f *View) RunUI() {
 		os.Exit(1)
 	}
 }
-
 
 func (f *View) DisplayToDos(todos []model.FileToDos) {
 	// Use the printer to convert the todos to a string
