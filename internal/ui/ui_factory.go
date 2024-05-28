@@ -14,6 +14,7 @@ type UIFactory struct {
 	app           *tview.Application
 	header        *tview.TextView
 	buttons       []*tview.Button
+	buttonFlex    *tview.Flex
 	todoTextView  *tview.TextView
 	mainContainer *tview.Flex
 }
@@ -21,13 +22,13 @@ type UIFactory struct {
 func NewUIFactory() *UIFactory {
 	app := tview.NewApplication()
 	header := createMainHeader()
-	buttons := createButtons(app)
+	buttons, buttonFlex := createButtons(app)
 	todoTextView := createTodoTextView(app)
-	mainContainer := createLayout(header, buttons, todoTextView)
+	mainContainer := createLayout(header, buttonFlex, todoTextView)
 
 	setupKeybindings(app)
 
-	return &UIFactory{app, header, buttons, todoTextView, mainContainer}
+	return &UIFactory{app, header, buttons, buttonFlex, todoTextView, mainContainer}
 }
 
 func createMainHeader() *tview.TextView {
@@ -43,7 +44,7 @@ func createMainHeader() *tview.TextView {
 		SetRegions(true)
 }
 
-func createButtons(app *tview.Application) []*tview.Button {
+func createButtons(app *tview.Application) ([]*tview.Button, *tview.Flex) {
 	button1 := tview.NewButton("1 - All").SetSelectedFunc(func() {
 		// TODO: Add logic to filter and display all todos
 	})
@@ -55,7 +56,14 @@ func createButtons(app *tview.Application) []*tview.Button {
 	})
 
 	buttons := []*tview.Button{button1, button2, button3}
-	return buttons
+
+	buttonFlex := tview.NewFlex().
+		SetDirection(tview.FlexColumn).
+		AddItem(button1, 0, 1, false).
+		AddItem(button2, 0, 1, false).
+		AddItem(button3, 0, 1, false)
+
+	return buttons, buttonFlex
 }
 
 func createTodoTextView(app *tview.Application) *tview.TextView {
@@ -69,17 +77,14 @@ func createTodoTextView(app *tview.Application) *tview.TextView {
 	return todoTextView
 }
 
-func createLayout(header *tview.TextView, buttons []*tview.Button, todoTextView *tview.TextView) *tview.Flex {
-	flex := tview.NewFlex().
+func createLayout(header *tview.TextView, buttonFlex *tview.Flex, todoTextView *tview.TextView) *tview.Flex {
+	mainFlex := tview.NewFlex().
 		SetDirection(tview.FlexRow).
-		AddItem(header, 3, 1, false)
+		AddItem(header, 3, 1, false).
+		AddItem(buttonFlex, 3, 1, false). // Adjusted size and weight for buttons
+		AddItem(todoTextView, 0, 1, true)
 
-	for _, button := range buttons {
-		flex.AddItem(button, 1, 1, false)
-	}
-
-	flex.AddItem(todoTextView, 0, 1, true)
-	return flex
+	return mainFlex
 }
 
 func setupKeybindings(app *tview.Application) {
