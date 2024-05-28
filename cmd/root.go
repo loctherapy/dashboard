@@ -24,7 +24,7 @@ var rootCmd = &cobra.Command{
 		setupKeybindings(app)
 		startUpdatingTodos(app, todoTextView)
 
-		mainUI(app, flex)
+		runUI(app, flex)
 	},
 }
 
@@ -105,7 +105,7 @@ func getToDoString() (string, error) {
 	return todosString, nil
 }
 
-func mainUI(app *tview.Application, flex *tview.Flex) {
+func runUI(app *tview.Application, flex *tview.Flex) {
 	// Start the application
 	if err := app.SetRoot(flex, true).Run(); err != nil {
 		fmt.Println("Error:", err)
