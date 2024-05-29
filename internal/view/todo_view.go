@@ -141,20 +141,34 @@ func (f *View) RunUI() {
 }
 
 func getContexts(todos []model.FileToDos) []string {
-	contexts := make(map[string]struct{})
-	for _, todo := range todos {
-		contexts[todo.Context] = struct{}{}
+	type Context struct {
+		Name     string
+		Gravity  int
 	}
 
-	var contextList []string
+	contextMap := make(map[string]Context)
+	for _, todo := range todos {
+		if existingContext, exists := contextMap[todo.Context]; !exists || existingContext.Gravity > todo.ContextGravity {
+			contextMap[todo.Context] = Context{Name: todo.Context, Gravity: todo.ContextGravity}
+		}
+	}
 
-	for context := range contexts {
+	var contextList []Context
+	for _, context := range contextMap {
 		contextList = append(contextList, context)
 	}
 
-	sort.Strings(contextList)
+	// Sort contexts by gravity
+	sort.Slice(contextList, func(i, j int) bool {
+		return contextList[i].Gravity < contextList[j].Gravity
+	})
 
-	return contextList
+	var sortedContexts []string
+	for _, context := range contextList {
+		sortedContexts = append(sortedContexts, context.Name)
+	}
+
+	return sortedContexts
 }
 
 func (f *View) createButtons() {
