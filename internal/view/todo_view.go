@@ -124,7 +124,7 @@ func (f *View) setupDynamicKeybindings() {
 				f.selectedContextID = contextIndex
 				f.selectedContextName = f.contexts[contextIndex]
 			}
-			f.setContextButtonFocus()
+			f.redrawToDos()
 		}
 		
 		return event
@@ -156,44 +156,25 @@ func getContexts(todos []model.FileToDos) []string {
 	return contextList
 }
 
-func (f *View) setContextButtonFocus() {
-	if !f.filterByContext {
-		f.app.SetFocus(f.buttons[0])
-	} else {
-		f.app.SetFocus(f.buttons[f.selectedContextID + 1])
-	}
-	f.app.SetFocus(f.todoTextView)
-}
-
 func (f *View) createButtons() {
 	// Clear the buttonsFlex and button references before adding new buttons
 	f.buttonsFlex.Clear()
 	f.buttons = []*tview.Button{}
 
-	createButton := func(id int, context string, filterByContext bool) {
+	createButton := func(id int, context string) {
 		buttonName := fmt.Sprintf("%d - %s", id, strings.ToUpper(context))
-		button := tview.NewButton(buttonName).SetSelectedFunc(func() {
-			
-			f.filterByContext = filterByContext
-			if filterByContext {
-				f.selectedContextName = context
-			}
-
-			f.redrawToDos()
-		})
+		button := tview.NewButton(buttonName)
 		f.buttonsFlex.AddItem(button, 0, 1, false)
 		f.buttons = append(f.buttons, button)
 	}
 
-	createButton(1, "All", false)
+	createButton(1, "All")
 
 	// Create a button for each context
 	for id, context := range f.contexts {
 		newId := id + 2
-		createButton(newId, context, true)
+		createButton(newId, context)
 	}
-
-	f.setContextButtonFocus()
 
 	// Setup key bindings for the new buttons
 	f.setupDynamicKeybindings()
@@ -225,10 +206,7 @@ func (f *View) redrawToDos() {
 		return
 	}
 
-	// Queue the update to the todoTextView
-	f.app.QueueUpdateDraw(func() {
-		f.todoTextView.SetText(todosString)
-	})
+	f.todoTextView.SetText(todosString)
 }
 
 func (f *View) DisplayToDos(todos []model.FileToDos) {
