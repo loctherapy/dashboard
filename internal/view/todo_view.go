@@ -116,10 +116,11 @@ func (f *View) setupDynamicKeybindings() {
 			*/
 			buttonIndex := int(event.Rune() - '1')
 			contextIndex := buttonIndex - 1
-
-			if contextIndex == -1 {
+			if contextIndex == -2 { 
+				return event
+			} else if contextIndex == -1 {
 				f.filterByContext = false
-			} else if contextIndex < len(f.buttons) {
+			} else if contextIndex < len(f.buttons) - 1 {
 				f.filterByContext = true
 				f.selectedContextID = contextIndex
 				f.selectedContextName = f.contexts[contextIndex]
