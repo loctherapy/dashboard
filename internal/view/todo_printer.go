@@ -1,9 +1,11 @@
-package todo
+package view
 
 import (
 	"sort"
 	"strings"
 	"text/template"
+
+	"github.com/loctherapy/dashboard/internal/model"
 )
 
 type ToDoPrinter struct {
@@ -12,7 +14,7 @@ type ToDoPrinter struct {
 }
 
 type TemplateData struct {
-	ContextMap   map[string][]FileToDos
+	ContextMap   map[string][]model.FileToDos
 	PrintContext func(string) string
 	PrintFile    func(string, int) string
 	PrintToDo    func(string) string
@@ -35,9 +37,9 @@ func NewToDoPrinter(printSettings IPrintSettings) (*ToDoPrinter, error) {
 	return &ToDoPrinter{Template: t, PrintSettings: printSettings}, nil
 }
 
-func (p *ToDoPrinter) Print(todos []FileToDos) (string, error) {
+func (p *ToDoPrinter) Print(todos []model.FileToDos) (string, error) {
 	// Group by context
-	contextMap := make(map[string][]FileToDos)
+	contextMap := make(map[string][]model.FileToDos)
 	for _, fileToDos := range todos {
 		contextMap[fileToDos.Context] = append(contextMap[fileToDos.Context], fileToDos)
 	}

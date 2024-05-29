@@ -1,4 +1,4 @@
-package todo
+package repository
 
 import (
 	"bufio"
@@ -6,39 +6,47 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/loctherapy/dashboard/internal/model"
 )
 
-type ToDoBuilder struct {
+type ToDoRepository struct {
     ToDoPattern   *regexp.Regexp
     FrontMatterRE *regexp.Regexp
+    FileFetcher   *FileFetcher
 }
 
-func NewToDoBuilder() *ToDoBuilder {
+func NewToDoRepository(fileFetcher *FileFetcher) *ToDoRepository {
     todoPattern := regexp.MustCompile(`^\s*- \[ \] `)
     frontMatterRE := regexp.MustCompile(`(?m)^---\s*$`)
-    return &ToDoBuilder{
+    return &ToDoRepository{
         ToDoPattern:   todoPattern,
         FrontMatterRE: frontMatterRE,
+        FileFetcher:  fileFetcher,
     }
 }
 
+func (r *ToDoRepository) GetAll() ([]model.FileToDos, error) {
+    var results []model.FileToDos
 
-func (b *ToDoBuilder) Build(files []string) ([]FileToDos, error) {
-    var results []FileToDos
-
+    files, err := r.FileFetcher.Fetch()
+    if err != nil {
+        return nil, err
+    }
+    
     for _, file := range files {
-        context, gravity, err := b.parseFrontMatter(file)
+        context, gravity, err := r.parseFrontMatter(file)
         if err != nil {
             return nil, err
         }
 
-        todos, err := b.extractToDos(file)
+        todos, err := r.extractToDos(file)
         if err != nil {
             return nil, err
         }
 
         if len(todos) > 0 {
-            results = append(results, FileToDos{
+            results = append(results, model.FileToDos{
                 FilePath: file,
                 ToDos:    todos,
                 Context:  context,
@@ -50,7 +58,7 @@ func (b *ToDoBuilder) Build(files []string) ([]FileToDos, error) {
     return results, nil
 }
 
-func (b *ToDoBuilder) parseFrontMatter(filePath string) (string, int, error) {
+func (r *ToDoRepository) parseFrontMatter(filePath string) (string, int, error) {
     file, err := os.Open(filePath)
     if err != nil {
         return "", 0, err
@@ -64,7 +72,7 @@ func (b *ToDoBuilder) parseFrontMatter(filePath string) (string, int, error) {
 
     for scanner.Scan() {
         line := scanner.Text()
-        if b.FrontMatterRE.MatchString(line) {
+        if r.FrontMatterRE.MatchString(line) {
             if inFrontMatter {
                 // End of front matter
                 break
@@ -92,8 +100,8 @@ func (b *ToDoBuilder) parseFrontMatter(filePath string) (string, int, error) {
     return context, gravity, nil
 }
 
-func (b *ToDoBuilder) extractToDos(filePath string) ([]ToDo, error) {
-    var todos []ToDo
+func (r *ToDoRepository) extractToDos(filePath string) ([]model.ToDo, error) {
+    var todos []model.ToDo
 
     file, err := os.Open(filePath)
     if err != nil {
@@ -104,8 +112,8 @@ func (b *ToDoBuilder) extractToDos(filePath string) ([]ToDo, error) {
     scanner := bufio.NewScanner(file)
     for scanner.Scan() {
         line := scanner.Text()
-        if b.ToDoPattern.MatchString(line) {
-            todos = append(todos, ToDo{Line: line})
+        if r.ToDoPattern.MatchString(line) {
+            todos = append(todos, model.ToDo{Line: line})
         }
     }
 

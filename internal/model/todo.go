@@ -1,4 +1,4 @@
-package todo
+package model
 
 type ToDo struct {
     Line string
