@@ -213,11 +213,7 @@ func (f* View) getFilteredByContextToDos() []model.FileToDos {
 	return filteredToDos
 }
 
-func (f *View) DisplayToDos(todos []model.FileToDos) {
-	// Store the todos
-	f.todos = todos
-	f.contexts = getContexts(todos)
-
+func (f *View) redrawToDos() {
 	// Get the todos to display
 	filteredToDos := f.getFilteredByContextToDos()
 
@@ -231,8 +227,17 @@ func (f *View) DisplayToDos(todos []model.FileToDos) {
 	// Queue the update to the todoTextView
 	f.app.QueueUpdateDraw(func() {
 		f.todoTextView.SetText(todosString)
-		
-		// Create buttons for each context
-		f.createButtons()
 	})
+}
+
+func (f *View) DisplayToDos(todos []model.FileToDos) {
+	// Store the todos
+	f.todos = todos
+	f.contexts = getContexts(todos)
+
+	// Create buttons for each context
+	f.createButtons()
+
+	// Redraw the todos
+	f.redrawToDos()
 }
