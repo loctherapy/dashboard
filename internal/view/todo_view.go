@@ -99,11 +99,8 @@ func (f *View) setupDynamicKeybindings() {
 		if event.Rune() >= '0' && event.Rune() <= '9' {
 			index := int(event.Rune() - '1')
 			if index < len(f.buttons) {
-				// button := view.buttons[index]
 				f.selectedContextID = index
 				f.setContextButtonFocus()
-				// button.
-				// view.buttons[index].Invoke()
 			}
 		}
 		
