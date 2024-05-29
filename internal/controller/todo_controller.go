@@ -34,7 +34,7 @@ func (c *ToDoController) startGettingToDos() {
 	go updateTodos()
 
 	// Create a ticker to update todos periodically
-	ticker := time.NewTicker(1 * time.Second) // Adjust the interval as needed
+	ticker := time.NewTicker(500 * time.Millisecond) // Adjust the interval as needed
 	go func() {
 		for {
 			select {
