@@ -178,7 +178,8 @@ func (f *View) createButtons() {
 			if filterByContext {
 				f.selectedContextName = context
 			}
-			
+
+			f.redrawToDos()
 		})
 		f.buttonsFlex.AddItem(button, 0, 1, false)
 		f.buttons = append(f.buttons, button)
