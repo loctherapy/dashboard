@@ -14,16 +14,22 @@ type ToDoPrinter struct {
 }
 
 type TemplateData struct {
-	ContextMap   map[string][]model.FileToDos
+	Contexts     []ContextData
 	PrintContext func(string) string
 	PrintFile    func(string, int) string
 	PrintToDo    func(string) string
 }
 
+type ContextData struct {
+	Name           string
+	Files          []model.FileToDos
+	ContextGravity int
+}
+
 func NewToDoPrinter(printSettings IPrintSettings) (*ToDoPrinter, error) {
-	const tmpl = `{{- range $context, $files := .ContextMap }}
-{{ call $.PrintContext $context }}
-{{- range $files }}
+	const tmpl = `{{- range .Contexts }}
+{{ call $.PrintContext .Name }}
+{{- range .Files }}
   {{ call $.PrintFile .FilePath .Gravity }}
   {{- range .ToDos }}
     {{ call $.PrintToDo .Line }}
@@ -40,8 +46,10 @@ func NewToDoPrinter(printSettings IPrintSettings) (*ToDoPrinter, error) {
 func (p *ToDoPrinter) Print(todos []model.FileToDos) (string, error) {
 	// Group by context
 	contextMap := make(map[string][]model.FileToDos)
+	contextGravityMap := make(map[string]int)
 	for _, fileToDos := range todos {
 		contextMap[fileToDos.Context] = append(contextMap[fileToDos.Context], fileToDos)
+		contextGravityMap[fileToDos.Context] = fileToDos.ContextGravity
 	}
 
 	// Sort files within each context by gravity
@@ -51,9 +59,24 @@ func (p *ToDoPrinter) Print(todos []model.FileToDos) (string, error) {
 		})
 	}
 
+	// Create a slice of contexts with their gravities
+	var contextDataList []ContextData
+	for context, files := range contextMap {
+		contextDataList = append(contextDataList, ContextData{
+			Name:           context,
+			Files:          files,
+			ContextGravity: contextGravityMap[context],
+		})
+	}
+
+	// Sort the contexts by their gravity
+	sort.Slice(contextDataList, func(i, j int) bool {
+		return contextDataList[i].ContextGravity < contextDataList[j].ContextGravity
+	})
+
 	// Create template data
 	data := TemplateData{
-		ContextMap:   contextMap,
+		Contexts:     contextDataList,
 		PrintContext: p.PrintSettings.PrintContext,
 		PrintFile:    p.PrintSettings.PrintFile,
 		PrintToDo:    p.PrintSettings.PrintToDo,
