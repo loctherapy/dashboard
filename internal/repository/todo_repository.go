@@ -11,115 +11,130 @@ import (
 )
 
 type ToDoRepository struct {
-    ToDoPattern   *regexp.Regexp
-    FrontMatterRE *regexp.Regexp
-    FileFetcher   *FileFetcher
+	ToDoPattern   *regexp.Regexp
+	FrontMatterRE *regexp.Regexp
+	ContextRE     *regexp.Regexp
+	FileFetcher   *FileFetcher
 }
 
 func NewToDoRepository(fileFetcher *FileFetcher) *ToDoRepository {
-    todoPattern := regexp.MustCompile(`^\s*- \[ \] `)
-    frontMatterRE := regexp.MustCompile(`(?m)^---\s*$`)
-    return &ToDoRepository{
-        ToDoPattern:   todoPattern,
-        FrontMatterRE: frontMatterRE,
-        FileFetcher:  fileFetcher,
-    }
+	contextRE := regexp.MustCompile(`^(?P<context_name>[a-zA-Z0-9_-]+)-(?P<context_gravity>\d+)$`)
+	todoPattern := regexp.MustCompile(`^\s*- \[ \] `)
+	frontMatterRE := regexp.MustCompile(`(?m)^---\s*$`)
+	return &ToDoRepository{
+		ToDoPattern:   todoPattern,
+		FrontMatterRE: frontMatterRE,
+		ContextRE:     contextRE,
+		FileFetcher:   fileFetcher,
+	}
 }
 
 func (r *ToDoRepository) GetAll() ([]model.FileToDos, error) {
-    var results []model.FileToDos
+	var results []model.FileToDos
 
-    files, err := r.FileFetcher.Fetch()
-    if err != nil {
-        return nil, err
-    }
-    
-    for _, file := range files {
-        context, gravity, err := r.parseFrontMatter(file)
-        if err != nil {
-            return nil, err
-        }
+	files, err := r.FileFetcher.Fetch()
+	if err != nil {
+		return nil, err
+	}
 
-        todos, err := r.extractToDos(file)
-        if err != nil {
-            return nil, err
-        }
+	for _, file := range files {
+		context, contextGravity, gravity, err := r.parseFrontMatter(file)
+		if err != nil {
+			return nil, err
+		}
 
-        if len(todos) > 0 {
-            results = append(results, model.FileToDos{
-                FilePath: file,
-                ToDos:    todos,
-                Context:  context,
-                Gravity:  gravity,
-            })
-        }
-    }
+		todos, err := r.extractToDos(file)
+		if err != nil {
+			return nil, err
+		}
 
-    return results, nil
+		if len(todos) > 0 {
+			results = append(results, model.FileToDos{
+				FilePath:       file,
+				ToDos:          todos,
+				Context:        context,
+				ContextGravity: contextGravity,
+				Gravity:        gravity,
+			})
+		}
+	}
+
+	return results, nil
 }
 
-func (r *ToDoRepository) parseFrontMatter(filePath string) (string, int, error) {
-    file, err := os.Open(filePath)
-    if err != nil {
-        return "", 0, err
-    }
-    defer file.Close()
+func (r *ToDoRepository) parseFrontMatter(filePath string) (string, int, int, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return "", 0, 0, err
+	}
+	defer file.Close()
 
-    scanner := bufio.NewScanner(file)
-    var context string
-    var gravity int
-    inFrontMatter := false
+	scanner := bufio.NewScanner(file)
+	var context string
+	var contextGravity int
+	var gravity int
+	inFrontMatter := false
 
-    for scanner.Scan() {
-        line := scanner.Text()
-        if r.FrontMatterRE.MatchString(line) {
-            if inFrontMatter {
-                // End of front matter
-                break
-            } else {
-                // Start of front matter
-                inFrontMatter = true
-                continue
-            }
-        }
+	for scanner.Scan() {
+		line := scanner.Text()
+		if r.FrontMatterRE.MatchString(line) {
+			if inFrontMatter {
+				// End of front matter
+				break
+			} else {
+				// Start of front matter
+				inFrontMatter = true
+				continue
+			}
+		}
 
-        if inFrontMatter {
-            if strings.HasPrefix(line, "context:") {
-                context = strings.TrimSpace(strings.TrimPrefix(line, "context:"))
-            } else if strings.HasPrefix(line, "gravity:") {
-                gravityStr := strings.TrimSpace(strings.TrimPrefix(line, "gravity:"))
-                gravity, _ = strconv.Atoi(gravityStr)
-            }
-        }
-    }
+		if inFrontMatter {
+			if strings.HasPrefix(line, "context:") {
+				context = strings.TrimSpace(strings.TrimPrefix(line, "context:"))
+				// Extract context name and gravity using the regex
+				if match := r.ContextRE.FindStringSubmatch(context); match != nil {
+					for i, name := range r.ContextRE.SubexpNames() {
+						if name == "context_name" && i < len(match) {
+							context = match[i]
+						} else if name == "context_gravity" && i < len(match) {
+							contextGravity, _ = strconv.Atoi(match[i])
+						}
+					}
+				}
+			} else if strings.HasPrefix(line, "gravity:") {
+				gravityStr := strings.TrimSpace(strings.TrimPrefix(line, "gravity:"))
+				gravity, _ = strconv.Atoi(gravityStr)
+			}
+		}
+	}
 
-    if err := scanner.Err(); err != nil {
-        return "", 0, err
-    }
+	if err := scanner.Err(); err != nil {
+		return "", 0, 0, err
+	}
 
-    return context, gravity, nil
+	return context, contextGravity, gravity, nil
 }
 
 func (r *ToDoRepository) extractToDos(filePath string) ([]model.ToDo, error) {
-    var todos []model.ToDo
+	var todos []model.ToDo
 
-    file, err := os.Open(filePath)
-    if err != nil {
-        return nil, err
-    }
-    defer file.Close()
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
 
-    scanner := bufio.NewScanner(file)
-    for scanner.Scan() {
-        line := scanner.Text()
-        if r.ToDoPattern.MatchString(line) {
-            todos = append(todos, model.ToDo{Line: line})
-        }
-    }
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if r.ToDoPattern.MatchString(line) {
+			todos = append(todos, model.ToDo{Line: line})
+		}
+	}
 
-    if err := scanner.Err(); err != nil {
-        return nil, err
-    }
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
 
-    return todos, nil
+	return todos, nil
 }
