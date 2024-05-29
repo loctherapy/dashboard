@@ -15,9 +15,11 @@ type View struct {
 	Printer       *ToDoPrinter
 	app           *tview.Application
 	header        *tview.TextView
-	buttonsFlex    *tview.Flex
+	buttonsFlex   *tview.Flex
 	todoTextView  *tview.TextView
 	mainContainer *tview.Flex
+	buttons       []*tview.Button // Store references to buttons
+	selectedContextID int
 }
 
 func NewView(printer *ToDoPrinter) *View {
@@ -26,10 +28,22 @@ func NewView(printer *ToDoPrinter) *View {
 	buttonFlex := tview.NewFlex()
 	todoTextView := createTodoTextView(app)
 	mainContainer := createLayout(header, buttonFlex, todoTextView)
+	selectedContextID := 0
 
-	setupKeybindings(app)
+	view := &View{
+		Printer:       printer,
+		app:           app,
+		header:        header,
+		buttonsFlex:   buttonFlex,
+		todoTextView:  todoTextView,
+		mainContainer: mainContainer,
+		buttons:       []*tview.Button{},
+		selectedContextID: selectedContextID,
+	}
 
-	return &View{printer, app, header, buttonFlex, todoTextView, mainContainer}
+	setupInitialKeybindings(view)
+
+	return view
 }
 
 func createMainHeader() *tview.TextView {
@@ -66,11 +80,34 @@ func createLayout(header *tview.TextView, buttonFlex *tview.Flex, todoTextView *
 	return mainFlex
 }
 
-func setupKeybindings(app *tview.Application) {
-	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+func setupInitialKeybindings(view *View) {
+	view.app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyCtrlC {
-			app.Stop()
+			view.app.Stop()
 		}
+		return event
+	})
+}
+
+func (f *View) setupDynamicKeybindings() {
+	f.app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyCtrlC {
+			f.app.Stop()
+		}
+
+		// Handle number keys for buttons
+		if event.Rune() >= '0' && event.Rune() <= '9' {
+			index := int(event.Rune() - '1')
+			if index < len(f.buttons) {
+				// button := view.buttons[index]
+				f.selectedContextID = index
+				f.setContextButtonFocus()
+				// button.
+				// view.buttons[index].Invoke()
+			}
+		}
+		
+		
 		return event
 	})
 }
@@ -103,17 +140,33 @@ func getContexts(todos []model.FileToDos) []string {
 	return contextList
 }
 
+func (f *View) setContextButtonFocus() {
+	f.app.SetFocus(f.buttons[f.selectedContextID])
+}
+
 func (f *View) createButtons(contexts []string) {
-	// Clear the buttonsFlex before adding new buttons
+	// Clear the buttonsFlex and button references before adding new buttons
 	f.buttonsFlex.Clear()
-	
+	f.buttons = []*tview.Button{}
+
 	// Create a button for each context
 	for id, context := range contexts {
 		newId := id + 1
 		buttonName := fmt.Sprintf("%d - %s", newId, strings.ToUpper(context))
-		button := tview.NewButton(buttonName).SetSelectedFunc(func() {})
+		button := tview.NewButton(buttonName).SetSelectedFunc(func() {
+			// message := fmt.Sprintf("Button %d - %s pressed\n", newId, strings.ToUpper(context))
+			// tview.Print(f.buttonFlex, message, 0, 0, 0, 0, tcell.ColorDefault)
+			// tview.Print("Button %d - %s pressed\n", newId, strings.ToUpper(context))
+			// fmt.Printf("Button %d - %s pressed\n", newId, strings.ToUpper(context))
+		})
 		f.buttonsFlex.AddItem(button, 0, 1, false)
+		f.buttons = append(f.buttons, button)
 	}
+
+	f.setContextButtonFocus()
+
+	// Setup key bindings for the new buttons
+	f.setupDynamicKeybindings()
 }
 
 func (f *View) DisplayToDos(todos []model.FileToDos) {
