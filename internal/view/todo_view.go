@@ -15,9 +15,15 @@ type View struct {
 	Printer       *ToDoPrinter
 	app           *tview.Application
 	header        *tview.TextView
-	buttonsFlex    *tview.Flex
+	buttonsFlex   *tview.Flex
 	todoTextView  *tview.TextView
 	mainContainer *tview.Flex
+	buttons       []*tview.Button // Store references to buttons
+	todos		  []model.FileToDos
+	contexts 	  []string
+	filterByContext bool
+	selectedContextName string
+	selectedContextID int
 }
 
 func NewView(printer *ToDoPrinter) *View {
@@ -26,10 +32,28 @@ func NewView(printer *ToDoPrinter) *View {
 	buttonFlex := tview.NewFlex()
 	todoTextView := createTodoTextView(app)
 	mainContainer := createLayout(header, buttonFlex, todoTextView)
+	selectedContextID := 0
+	selectedContextName := "All"
+	todos := []model.FileToDos{}
+	filterByContext := false
 
-	setupKeybindings(app)
+	view := &View{
+		Printer:       printer,
+		app:           app,
+		header:        header,
+		buttonsFlex:   buttonFlex,
+		todoTextView:  todoTextView,
+		mainContainer: mainContainer,
+		buttons:       []*tview.Button{},
+		selectedContextID: selectedContextID,
+		todos: todos,
+		filterByContext: filterByContext,
+		selectedContextName: selectedContextName,
+	}
 
-	return &View{printer, app, header, buttonFlex, todoTextView, mainContainer}
+	setupInitialKeybindings(view)
+
+	return view
 }
 
 func createMainHeader() *tview.TextView {
@@ -66,11 +90,43 @@ func createLayout(header *tview.TextView, buttonFlex *tview.Flex, todoTextView *
 	return mainFlex
 }
 
-func setupKeybindings(app *tview.Application) {
-	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+func setupInitialKeybindings(view *View) {
+	view.app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyCtrlC {
-			app.Stop()
+			view.app.Stop()
 		}
+		return event
+	})
+}
+
+func (f *View) setupDynamicKeybindings() {
+	f.app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyCtrlC {
+			f.app.Stop()
+		}
+
+		// Handle number keys for buttons
+		if event.Rune() >= '0' && event.Rune() <= '9' {
+			
+			/* Buttons: 	1 - All, 2 - CF, 3 - GP
+			   Runes:   	1        2       3
+			   ButtonIndex: 0        1       2
+			   ContextIndex:?        0       1
+
+			*/
+			buttonIndex := int(event.Rune() - '1')
+			contextIndex := buttonIndex - 1
+
+			if contextIndex == -1 {
+				f.filterByContext = false
+			} else if contextIndex < len(f.buttons) {
+				f.filterByContext = true
+				f.selectedContextID = contextIndex
+				f.selectedContextName = f.contexts[contextIndex]
+			}
+			f.redrawToDos()
+		}
+		
 		return event
 	})
 }
@@ -91,9 +147,6 @@ func getContexts(todos []model.FileToDos) []string {
 
 	var contextList []string
 
-	// Add a button for all contexts
-	contextList = append(contextList, "All")
-
 	for context := range contexts {
 		contextList = append(contextList, context)
 	}
@@ -103,35 +156,67 @@ func getContexts(todos []model.FileToDos) []string {
 	return contextList
 }
 
-func (f *View) createButtons(contexts []string) {
-	// Clear the buttonsFlex before adding new buttons
+func (f *View) createButtons() {
+	// Clear the buttonsFlex and button references before adding new buttons
 	f.buttonsFlex.Clear()
-	
-	// Create a button for each context
-	for id, context := range contexts {
-		newId := id + 1
-		buttonName := fmt.Sprintf("%d - %s", newId, strings.ToUpper(context))
-		button := tview.NewButton(buttonName).SetSelectedFunc(func() {})
+	f.buttons = []*tview.Button{}
+
+	createButton := func(id int, context string) {
+		buttonName := fmt.Sprintf("%d - %s", id, strings.ToUpper(context))
+		button := tview.NewButton(buttonName)
 		f.buttonsFlex.AddItem(button, 0, 1, false)
+		f.buttons = append(f.buttons, button)
 	}
+
+	createButton(1, "All")
+
+	// Create a button for each context
+	for id, context := range f.contexts {
+		newId := id + 2
+		createButton(newId, context)
+	}
+
+	// Setup key bindings for the new buttons
+	f.setupDynamicKeybindings()
 }
 
-func (f *View) DisplayToDos(todos []model.FileToDos) {
+func (f* View) getFilteredByContextToDos() []model.FileToDos {
+	if !f.filterByContext {
+		return f.todos
+	}
+
+	filteredToDos := []model.FileToDos{}
+	for _, todo := range f.todos {
+		if todo.Context == f.selectedContextName {
+			filteredToDos = append(filteredToDos, todo)
+		}
+	}
+
+	return filteredToDos
+}
+
+func (f *View) redrawToDos() {
+	// Get the todos to display
+	filteredToDos := f.getFilteredByContextToDos()
+
 	// Use the printer to convert the todos to a string
-	todosString, err := f.Printer.Print(todos)
+	todosString, err := f.Printer.Print(filteredToDos)
 	if err != nil {
 		fmt.Println("Error printing todos:", err)
 		return
 	}
 
-	// Queue the update to the todoTextView
-	f.app.QueueUpdateDraw(func() {
-		f.todoTextView.SetText(todosString)
+	f.todoTextView.SetText(todosString)
+}
 
-		// Get the unique contexts from the todos
-		contexts := getContexts(todos)
-		
-		// Create buttons for each context
-		f.createButtons(contexts)
-	})
+func (f *View) DisplayToDos(todos []model.FileToDos) {
+	// Store the todos
+	f.todos = todos
+	f.contexts = getContexts(todos)
+
+	// Create buttons for each context
+	f.createButtons()
+
+	// Redraw the todos
+	f.redrawToDos()
 }
