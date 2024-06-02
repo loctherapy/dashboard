@@ -125,6 +125,8 @@ func (f *View) setupDynamicKeybindings() {
 				f.selectedContextID = contextIndex
 				f.selectedContextName = f.contexts[contextIndex]
 			}
+
+			f.resetButtonColors()
 			f.redrawToDos()
 		}
 		
@@ -210,6 +212,29 @@ func (f* View) getFilteredByContextToDos() []model.FileToDos {
 	return filteredToDos
 }
 
+func (f *View) resetButtonColors() {
+
+	isSelected := func(index int) bool {
+		if index == 0 && !f.filterByContext {
+			return true
+		}
+		if index > 0 && f.filterByContext {
+			return f.selectedContextID == index - 1
+		}
+
+		return false
+	}
+	
+	for index, button := range f.buttons {
+		if isSelected(index) {
+			button.SetBorder(true)
+			button.SetBorderColor(tcell.ColorAntiqueWhite)
+		} else {
+			button.SetBorder(false)
+		}
+	}
+}
+
 func (f *View) redrawToDos() {
 	// Get the todos to display
 	filteredToDos := f.getFilteredByContextToDos()
@@ -231,6 +256,9 @@ func (f *View) DisplayToDos(todos []model.FileToDos) {
 
 	// Create buttons for each context
 	f.createButtons()
+
+	// Reset button colors
+	f.resetButtonColors()
 
 	// Redraw the todos
 	f.redrawToDos()
