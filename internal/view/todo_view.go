@@ -12,42 +12,42 @@ import (
 )
 
 type View struct {
-	Printer       *ToDoPrinter
-	app           *tview.Application
-	header        *tview.TextView
-	buttonsFlex   *tview.Flex
-	todoTextView  *tview.TextView
-	mainContainer *tview.Flex
-	buttons       []*tview.Button // Store references to buttons
-	todos		  []model.FileToDos
-	contexts 	  []string
-	filterByContext bool
+	Printer            *ToDoPrinter
+	app                *tview.Application
+	buttonsFlex        *tview.Flex
+	todoTextView       *tview.TextView
+	mainContainer      *tview.Flex
+	frame              *tview.Frame
+	buttons            []*tview.Button // Store references to buttons
+	todos              []model.FileToDos
+	contexts           []string
+	filterByContext    bool
 	selectedContextName string
-	selectedContextID int
+	selectedContextID  int
 }
 
 func NewView(printer *ToDoPrinter) *View {
 	app := tview.NewApplication()
-	header := createMainHeader()
 	buttonFlex := tview.NewFlex()
 	todoTextView := createTodoTextView(app)
-	mainContainer := createLayout(header, buttonFlex, todoTextView)
+	mainContainer := createLayout(buttonFlex, todoTextView)
 	selectedContextID := 0
 	selectedContextName := "All"
 	todos := []model.FileToDos{}
 	filterByContext := false
+	frame := createNewFrame(mainContainer)
 
 	view := &View{
-		Printer:       printer,
-		app:           app,
-		header:        header,
-		buttonsFlex:   buttonFlex,
-		todoTextView:  todoTextView,
-		mainContainer: mainContainer,
-		buttons:       []*tview.Button{},
-		selectedContextID: selectedContextID,
-		todos: todos,
-		filterByContext: filterByContext,
+		Printer:            printer,
+		app:                app,
+		buttonsFlex:        buttonFlex,
+		todoTextView:       todoTextView,
+		mainContainer:      mainContainer,
+		frame: 				frame,
+		buttons:            []*tview.Button{},
+		selectedContextID:  selectedContextID,
+		todos:              todos,
+		filterByContext:    filterByContext,
 		selectedContextName: selectedContextName,
 	}
 
@@ -56,17 +56,10 @@ func NewView(printer *ToDoPrinter) *View {
 	return view
 }
 
-func createMainHeader() *tview.TextView {
-	headerText := `
-🔋 LOCTHERAPY DASHBOARD 🔋
-────────────────────────────────────────`
-
-	return tview.NewTextView().
-		SetText(headerText).
-		SetTextAlign(tview.AlignCenter).
-		SetTextColor(tcell.ColorGreen).
-		SetDynamicColors(true).
-		SetRegions(true)
+func createNewFrame(flex *tview.Flex) *tview.Frame {
+	return tview.NewFrame(flex).
+		SetBorders(1, 1, 1, 1, 2, 2)//.
+		// AddText("🔋 LOCTHERAPY DASHBOARD 🔋", true, tview.AlignCenter, tcell.ColorGreen).
 }
 
 func createTodoTextView(app *tview.Application) *tview.TextView {
@@ -80,10 +73,9 @@ func createTodoTextView(app *tview.Application) *tview.TextView {
 	return todoTextView
 }
 
-func createLayout(header *tview.TextView, buttonFlex *tview.Flex, todoTextView *tview.TextView) *tview.Flex {
+func createLayout(buttonFlex *tview.Flex, todoTextView *tview.TextView) *tview.Flex {
 	mainFlex := tview.NewFlex().
 		SetDirection(tview.FlexRow).
-		AddItem(header, 3, 1, false).
 		AddItem(buttonFlex, 3, 1, false). // Adjusted size and weight for buttons
 		AddItem(todoTextView, 0, 1, true)
 
@@ -107,7 +99,6 @@ func (f *View) setupDynamicKeybindings() {
 
 		// Handle number keys for buttons
 		if event.Rune() >= '0' && event.Rune() <= '9' {
-			
 			/* Buttons: 	1 - All, 2 - CF, 3 - GP
 			   Runes:   	1        2       3
 			   ButtonIndex: 0        1       2
@@ -116,11 +107,11 @@ func (f *View) setupDynamicKeybindings() {
 			*/
 			buttonIndex := int(event.Rune() - '1')
 			contextIndex := buttonIndex - 1
-			if contextIndex == -2 { 
+			if contextIndex == -2 {
 				return event
 			} else if contextIndex == -1 {
 				f.filterByContext = false
-			} else if contextIndex < len(f.buttons) - 1 {
+			} else if contextIndex < len(f.buttons)-1 {
 				f.filterByContext = true
 				f.selectedContextID = contextIndex
 				f.selectedContextName = f.contexts[contextIndex]
@@ -129,14 +120,14 @@ func (f *View) setupDynamicKeybindings() {
 			f.resetButtonColors()
 			f.redrawToDos()
 		}
-		
+
 		return event
 	})
 }
 
 func (f *View) RunUI() {
 	// Start the application
-	if err := f.app.SetRoot(f.mainContainer, true).Run(); err != nil {
+	if err := f.app.SetRoot(f.frame, true).Run(); err != nil {
 		fmt.Println("Error:", err)
 		os.Exit(1)
 	}
@@ -144,8 +135,8 @@ func (f *View) RunUI() {
 
 func getContexts(todos []model.FileToDos) []string {
 	type Context struct {
-		Name     string
-		Gravity  int
+		Name    string
+		Gravity int
 	}
 
 	contextMap := make(map[string]Context)
@@ -197,7 +188,7 @@ func (f *View) createButtons() {
 	f.setupDynamicKeybindings()
 }
 
-func (f* View) getFilteredByContextToDos() []model.FileToDos {
+func (f *View) getFilteredByContextToDos() []model.FileToDos {
 	if !f.filterByContext {
 		return f.todos
 	}
@@ -219,12 +210,12 @@ func (f *View) resetButtonColors() {
 			return true
 		}
 		if index > 0 && f.filterByContext {
-			return f.selectedContextID == index - 1
+			return f.selectedContextID == index-1
 		}
 
 		return false
 	}
-	
+
 	for index, button := range f.buttons {
 		if isSelected(index) {
 			button.SetBorder(true)
