@@ -1,6 +1,6 @@
 ---
-context: gp
-gravity: 9
+context: myself-1
+gravity: 8
 ---
 
 # Project Alfa
