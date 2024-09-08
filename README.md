@@ -46,9 +46,9 @@ gravity: 8
 ### Marking TODOs as Completed
 To mark a TODO as completed, change the status from - [ ] to - [x] in the markdown file. The dashboard doesn't show completed TODOs.
 
-### License
+## License
 This project is licensed under the MIT License. See the LICENSE file for details.
 
-### Contributing
+## Contributing
 Contributions are welcome! Please open an issue or submit a pull request.
 
