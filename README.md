@@ -36,7 +36,7 @@ gravity: 8
 ```
 
 ### Frontmatter Explanation
-- `context`: Sets the priority for the context. The lower the number, the higher the priority.
+- `context`: The number at the end of the context name sets the priority for the context. The lower the number, the higher the priority.
 - `gravity`: Indicates the importance of the project. The higher the gravity, the higher the project will appear in the list of TODOs within the context.
 
 ### Navigating TODOs
