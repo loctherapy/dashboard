@@ -38,19 +38,19 @@ func (r *ToDoRepository) GetAll() ([]model.FileToDos, error) {
 	}
 
 	for _, file := range files {
-		context, contextGravity, gravity, err := r.parseFrontMatter(file)
+		context, contextGravity, gravity, err := r.parseFrontMatter(file.Path)
 		if err != nil {
 			return nil, err
 		}
 
-		todos, err := r.extractToDos(file)
+		todos, err := r.extractToDos(file.Path)
 		if err != nil {
 			return nil, err
 		}
 
 		if len(todos) > 0 {
 			results = append(results, model.FileToDos{
-				FilePath:       file,
+				FilePath:       file.Path,
 				ToDos:          todos,
 				Context:        context,
 				ContextGravity: contextGravity,

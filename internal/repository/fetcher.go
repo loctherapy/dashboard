@@ -5,10 +5,16 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"time"
 )
 
 type FileFetcher struct {
 	FileRegex *regexp.Regexp
+}
+
+type FileInfo struct {
+	Path    string
+	ModTime time.Time
 }
 
 func NewFileFetcher(pattern string) (*FileFetcher, error) {
@@ -17,7 +23,6 @@ func NewFileFetcher(pattern string) (*FileFetcher, error) {
 	}
 
 	re, err := regexp.Compile(pattern)
-
 	if err != nil {
 		return nil, fmt.Errorf("invalid regex pattern: %v", err)
 	}
@@ -25,16 +30,15 @@ func NewFileFetcher(pattern string) (*FileFetcher, error) {
 	return &FileFetcher{FileRegex: re}, nil
 }
 
-func (f *FileFetcher) Fetch() ([]string, error) {
-
-	var files []string
+func (f *FileFetcher) Fetch() ([]FileInfo, error) {
+	var files []FileInfo
 
 	err := filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 		if !info.IsDir() && f.FileRegex.MatchString(info.Name()) {
-			files = append(files, path)
+			files = append(files, FileInfo{Path: path, ModTime: info.ModTime()})
 		}
 		return nil
 	})
