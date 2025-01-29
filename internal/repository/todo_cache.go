@@ -35,3 +35,11 @@ func (c *ToDoCache) Get(filePath string) (FileInfoTodos, bool) {
 func (c *ToDoCache) Delete(filePath string) {
     delete(c.cache, filePath)
 }
+
+func (c *ToDoCache) Dump() []model.FileToDos {
+    var allTodos []model.FileToDos
+    for _, fileInfoTodos := range c.cache {
+        allTodos = append(allTodos, fileInfoTodos.Todos...)
+    }
+    return allTodos
+}
