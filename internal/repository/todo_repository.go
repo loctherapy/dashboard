@@ -19,7 +19,6 @@ func NewToDoRepository(fileFetcher *FileFetcher) *ToDoRepository {
 
 	todoPattern := regexp.MustCompile(`^\s*- \[ \] `)
 	todoExtractor := NewToDoExtractor(todoPattern)
-	
 	return &ToDoRepository{
 		FileFetcher:   fileFetcher,
 		FrontMatterParser: frontMatterParser,
