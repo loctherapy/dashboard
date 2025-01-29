@@ -16,7 +16,7 @@ type FrontMatterParser struct {
 func NewFrontMatterParser(frontMatterRE *regexp.Regexp, contextRE *regexp.Regexp) *FrontMatterParser {
 	return &FrontMatterParser{
 		FrontMatterRE: frontMatterRE,
-		ContextRE: contextRE,
+		ContextRE:     contextRE,
 	}
 }
 

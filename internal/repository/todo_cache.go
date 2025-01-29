@@ -8,7 +8,7 @@ import (
 
 type FileInfoTodos struct {
 	FileInfo FileInfo
-	Todos []model.FileToDos
+	Todos    []model.FileToDos
 }
 
 type ToDoCache struct {
@@ -28,18 +28,18 @@ func (c *ToDoCache) Push(filePath string, fileModTime time.Time, todos []model.F
 }
 
 func (c *ToDoCache) Get(filePath string) (FileInfoTodos, bool) {
-    fileInfoTodos, exists := c.cache[filePath]
-    return fileInfoTodos, exists
+	fileInfoTodos, exists := c.cache[filePath]
+	return fileInfoTodos, exists
 }
 
 func (c *ToDoCache) Delete(filePath string) {
-    delete(c.cache, filePath)
+	delete(c.cache, filePath)
 }
 
 func (c *ToDoCache) Dump() []model.FileToDos {
-    var allTodos []model.FileToDos
-    for _, fileInfoTodos := range c.cache {
-        allTodos = append(allTodos, fileInfoTodos.Todos...)
-    }
-    return allTodos
+	var allTodos []model.FileToDos
+	for _, fileInfoTodos := range c.cache {
+		allTodos = append(allTodos, fileInfoTodos.Todos...)
+	}
+	return allTodos
 }
