@@ -7,9 +7,10 @@ import (
 )
 
 type ToDoRepository struct {
-	FileFetcher   *FileFetcher
+	FileFetcher       *FileFetcher
 	FrontMatterParser *FrontMatterParser
-	ToDoExtractor *ToDoExtractor
+	ToDoExtractor     *ToDoExtractor
+	Cache             *ToDoCache
 }
 
 func NewToDoRepository(fileFetcher *FileFetcher) *ToDoRepository {
@@ -20,41 +21,58 @@ func NewToDoRepository(fileFetcher *FileFetcher) *ToDoRepository {
 	todoPattern := regexp.MustCompile(`^\s*- \[ \] `)
 	todoExtractor := NewToDoExtractor(todoPattern)
 	return &ToDoRepository{
-		FileFetcher:   fileFetcher,
+		FileFetcher:       fileFetcher,
 		FrontMatterParser: frontMatterParser,
-		ToDoExtractor: todoExtractor,
+		ToDoExtractor:     todoExtractor,
+		Cache:             NewToDoCache(),
 	}
 }
 
 func (r *ToDoRepository) GetAll() ([]model.FileToDos, error) {
-	var results []model.FileToDos
-
 	files, err := r.FileFetcher.Fetch()
 	if err != nil {
 		return nil, err
 	}
 
+	// Update cache with new or modified files
 	for _, file := range files {
-		context, contextGravity, gravity, err := r.FrontMatterParser.Parse(file.Path)
-		if err != nil {
-			return nil, err
-		}
+		cachedFile, exists := r.Cache.Get(file.Path)
+		if !exists || !file.ModTime.Equal(cachedFile.FileInfo.ModTime) {
+			context, contextGravity, gravity, err := r.FrontMatterParser.Parse(file.Path)
+			if err != nil {
+				return nil, err
+			}
 
-		todos, err := r.ToDoExtractor.Extract(file.Path)
-		if err != nil {
-			return nil, err
-		}
+			todos, err := r.ToDoExtractor.Extract(file.Path)
+			if err != nil {
+				return nil, err
+			}
 
-		if len(todos) > 0 {
-			results = append(results, model.FileToDos{
-				FilePath:       file.Path,
-				ToDos:          todos,
-				Context:        context,
-				ContextGravity: contextGravity,
-				Gravity:        gravity,
+			r.Cache.Push(file.Path, file.ModTime, []model.FileToDos{
+				{
+					FilePath:       file.Path,
+					ToDos:          todos,
+					Context:        context,
+					ContextGravity: contextGravity,
+					Gravity:        gravity,
+				},
 			})
 		}
 	}
 
-	return results, nil
+	// Remove files from cache that are no longer present
+	for filePath := range r.Cache.cache {
+		found := false
+		for _, file := range files {
+			if file.Path == filePath {
+				found = true
+				break
+			}
+		}
+		if !found {
+			r.Cache.Delete(filePath)
+		}
+	}
+
+	return r.Cache.Dump(), nil
 }
