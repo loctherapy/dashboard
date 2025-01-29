@@ -1,17 +1,15 @@
 package repository
 
 import (
-	"bufio"
-	"os"
 	"regexp"
 
 	"github.com/loctherapy/dashboard/internal/model"
 )
 
 type ToDoRepository struct {
-	ToDoPattern   *regexp.Regexp
 	FileFetcher   *FileFetcher
 	FrontMatterParser *FrontMatterParser
+	ToDoExtractor *ToDoExtractor
 }
 
 func NewToDoRepository(fileFetcher *FileFetcher) *ToDoRepository {
@@ -20,11 +18,12 @@ func NewToDoRepository(fileFetcher *FileFetcher) *ToDoRepository {
 	frontMatterParser := NewFrontMatterParser(frontMatterRE, contextRE)
 
 	todoPattern := regexp.MustCompile(`^\s*- \[ \] `)
+	todoExtractor := NewToDoExtractor(todoPattern)
 	
 	return &ToDoRepository{
-		ToDoPattern:   todoPattern,
-		FrontMatterParser: frontMatterParser,
 		FileFetcher:   fileFetcher,
+		FrontMatterParser: frontMatterParser,
+		ToDoExtractor: todoExtractor,
 	}
 }
 
@@ -42,7 +41,7 @@ func (r *ToDoRepository) GetAll() ([]model.FileToDos, error) {
 			return nil, err
 		}
 
-		todos, err := r.extractToDos(file.Path)
+		todos, err := r.ToDoExtractor.Extract(file.Path)
 		if err != nil {
 			return nil, err
 		}
@@ -59,28 +58,4 @@ func (r *ToDoRepository) GetAll() ([]model.FileToDos, error) {
 	}
 
 	return results, nil
-}
-
-func (r *ToDoRepository) extractToDos(filePath string) ([]model.ToDo, error) {
-	var todos []model.ToDo
-
-	file, err := os.Open(filePath)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := scanner.Text()
-		if r.ToDoPattern.MatchString(line) {
-			todos = append(todos, model.ToDo{Line: line})
-		}
-	}
-
-	if err := scanner.Err(); err != nil {
-		return nil, err
-	}
-
-	return todos, nil
 }
