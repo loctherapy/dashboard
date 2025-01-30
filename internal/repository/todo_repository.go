@@ -68,14 +68,7 @@ func (r *ToDoRepository) GetAll() ([]model.FileToDos, error) {
 
 	// Remove files from cache that are no longer present
 	for filePath := range r.Cache.cache {
-		found := false
-		for _, file := range files {
-			if file.Path == filePath {
-				found = true
-				break
-			}
-		}
-		if !found {
+		if _, found := files[filePath]; !found {
 			r.Cache.Delete(filePath)
 		}
 	}
