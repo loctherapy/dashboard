@@ -30,15 +30,15 @@ func NewFileFetcher(pattern string) (*FileFetcher, error) {
 	return &FileFetcher{FileRegex: re}, nil
 }
 
-func (f *FileFetcher) Fetch() ([]FileInfo, error) {
-	var files []FileInfo
+func (f *FileFetcher) Fetch() (map[string]FileInfo, error) {
+	files := make(map[string]FileInfo)
 
 	err := filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 		if !info.IsDir() && f.FileRegex.MatchString(info.Name()) {
-			files = append(files, FileInfo{Path: path, ModTime: info.ModTime()})
+			files[path] = FileInfo{Path: path, ModTime: info.ModTime()}
 		}
 		return nil
 	})

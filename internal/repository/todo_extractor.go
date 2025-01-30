@@ -9,7 +9,7 @@ import (
 )
 
 type ToDoExtractor struct {
-	ToDoPattern   *regexp.Regexp
+	ToDoPattern *regexp.Regexp
 }
 
 func NewToDoExtractor(todoPattern *regexp.Regexp) *ToDoExtractor {
