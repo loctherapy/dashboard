@@ -52,10 +52,13 @@ func (p *ToDoPrinter) Print(todos []model.FileToDos) (string, error) {
 		contextGravityMap[fileToDos.Context] = fileToDos.ContextGravity
 	}
 
-	// Sort files within each context by gravity
+	// Sort files within each context by gravity and by fileName if gravity is the same
 	for _, files := range contextMap {
 		sort.Slice(files, func(i, j int) bool {
-			return files[i].Gravity > files[j].Gravity
+			if files[i].Gravity == files[j].Gravity {
+                return files[i].FilePath < files[j].FilePath
+            }
+            return files[i].Gravity > files[j].Gravity
 		})
 	}
 
