@@ -11,6 +11,7 @@ type ToDoRepository struct {
 	FrontMatterParser *FrontMatterParser
 	ToDoExtractor     *ToDoExtractor
 	Cache             *ToDoCache
+	cacheInitialized  bool
 }
 
 func NewToDoRepository(fileFetcher *FileFetcher) *ToDoRepository {
@@ -25,10 +26,53 @@ func NewToDoRepository(fileFetcher *FileFetcher) *ToDoRepository {
 		FrontMatterParser: frontMatterParser,
 		ToDoExtractor:     todoExtractor,
 		Cache:             NewToDoCache(),
+		cacheInitialized:  false,
 	}
 }
 
+func (r *ToDoRepository) initilizeCache() (error) {
+	files, err := r.FileFetcher.Fetch()
+	if err != nil {
+		return err
+	}
+
+	// Initialize the cache
+	for _, file := range files {
+
+		context, contextGravity, gravity, err := r.FrontMatterParser.Parse(file.Path)
+		if err != nil {
+			return err
+		}
+
+		todos, err := r.ToDoExtractor.Extract(file.Path)
+		if err != nil {
+			return err
+		}
+
+		r.Cache.Push(file.Path, file.ModTime, []model.FileToDos{
+			{
+				FilePath:       file.Path,
+				ToDos:          todos,
+				Context:        context,
+				ContextGravity: contextGravity,
+				Gravity:        gravity,
+			},
+		})
+	}
+
+	r.cacheInitialized = true
+
+	return nil
+}
+
 func (r *ToDoRepository) GetAll() ([]model.FileToDos, error) {
+	if !r.cacheInitialized {
+		err := r.initilizeCache()
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	files, err := r.FileFetcher.Fetch()
 	if err != nil {
 		return nil, err
@@ -49,10 +93,6 @@ func (r *ToDoRepository) GetAll() ([]model.FileToDos, error) {
 		todos, err := r.ToDoExtractor.Extract(file.Path)
 		if err != nil {
 			return nil, err
-		}
-
-		if len(todos) == 0 {
-			continue
 		}
 
 		r.Cache.Push(file.Path, file.ModTime, []model.FileToDos{

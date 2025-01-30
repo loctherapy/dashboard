@@ -39,7 +39,9 @@ func (c *ToDoCache) Delete(filePath string) {
 func (c *ToDoCache) Dump() []model.FileToDos {
 	var allTodos []model.FileToDos
 	for _, fileInfoTodos := range c.cache {
-		allTodos = append(allTodos, fileInfoTodos.Todos...)
+		if len(fileInfoTodos.Todos[0].ToDos) > 0 {
+			allTodos = append(allTodos, fileInfoTodos.Todos...)
+		}
 	}
 	return allTodos
 }
