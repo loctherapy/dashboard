@@ -39,25 +39,10 @@ func (r *ToDoRepository) initilizeCache() (error) {
 	// Initialize the cache
 	for _, file := range files {
 
-		context, contextGravity, gravity, err := r.FrontMatterParser.Parse(file.Path)
+		err := r.parseExtractPushToCache(file)
 		if err != nil {
 			return err
 		}
-
-		todos, err := r.ToDoExtractor.Extract(file.Path)
-		if err != nil {
-			return err
-		}
-
-		r.Cache.Push(file.Path, file.ModTime, []model.FileToDos{
-			{
-				FilePath:       file.Path,
-				ToDos:          todos,
-				Context:        context,
-				ContextGravity: contextGravity,
-				Gravity:        gravity,
-			},
-		})
 	}
 
 	r.cacheInitialized = true
@@ -85,25 +70,10 @@ func (r *ToDoRepository) GetAll() ([]model.FileToDos, error) {
 			continue
 		}
 
-		context, contextGravity, gravity, err := r.FrontMatterParser.Parse(file.Path)
+		err := r.parseExtractPushToCache(file)
 		if err != nil {
 			return nil, err
 		}
-
-		todos, err := r.ToDoExtractor.Extract(file.Path)
-		if err != nil {
-			return nil, err
-		}
-
-		r.Cache.Push(file.Path, file.ModTime, []model.FileToDos{
-			{
-				FilePath:       file.Path,
-				ToDos:          todos,
-				Context:        context,
-				ContextGravity: contextGravity,
-				Gravity:        gravity,
-			},
-		})
 	}
 
 	// Remove files from cache that are no longer present
@@ -114,4 +84,28 @@ func (r *ToDoRepository) GetAll() ([]model.FileToDos, error) {
 	}
 
 	return r.Cache.Dump(), nil
+}
+
+func (r *ToDoRepository) parseExtractPushToCache(file FileInfo) error {
+	context, contextGravity, gravity, err := r.FrontMatterParser.Parse(file.Path)
+	if err != nil {
+		return err
+	}
+
+	todos, err := r.ToDoExtractor.Extract(file.Path)
+	if err != nil {
+		return err
+	}
+
+	r.Cache.Push(file.Path, file.ModTime, []model.FileToDos{
+		{
+			FilePath:       file.Path,
+			ToDos:          todos,
+			Context:        context,
+			ContextGravity: contextGravity,
+			Gravity:        gravity,
+		},
+	})
+
+	return nil
 }
