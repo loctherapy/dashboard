@@ -92,6 +92,10 @@ func (r *ToDoRepository) parseExtractPushToCache(file FileInfo) error {
 		return err
 	}
 
+	if context == "" {
+		return nil
+	}
+
 	todos, err := r.ToDoExtractor.Extract(file.Path)
 	if err != nil {
 		return err
